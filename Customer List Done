@@ -1,0 +1,223 @@
+Option Compare Database
+Option Explicit 
+'-----------------------
+Dim SrchVal As String
+Dim SrchCrit As String
+Dim LastFld As String 
+
+Private Sub AddBtn_Click()                                'Click the Add Button
+Me.AllowAdditions = True
+DoCmd.RunCommand acCmdRecordsGoToNew
+Me!LastName = ""                
+Me.AllowAdditions = False                 
+Call EditBtn_Click
+End Sub 
+
+Private Sub Address_Label_Click()                         'Sort by Address label
+If OrderBy = "address" Then 
+   OrderBy = "address desc" 
+Else 
+   OrderBy = "address" 
+End If
+End Sub 
+
+Private Sub CustID_Label_Click()                          'sort by customerID label
+If OrderBy = "custid" Then 
+   OrderBy = "custid desc" 
+Else 
+   OrderBy = "custid" 
+ End If
+End Sub 
+
+Private Sub Date_Added_Label_Click()                      'sort by date_added label    
+If OrderBy = "[date added]" Then 
+   OrderBy = "date added desc" 
+Else 
+   OrderBy = "date added" 
+End If
+End Sub 
+ 
+Private Sub DelBtn_Click()                               'Delete customer button
+Dim CustStr As String
+If MsgBox(" Are you SURE you want to Delete this Customer? ", vbYesNo) = vbYes Then 
+   CustStr = "Cust ID: " & Me!CustID & " - " & Me!FirstName & " " & Me!LastName 
+   Me.AllowDeletions = True 
+   DoCmd.RunCommand acCmdDeleteRecord 
+   Me.AllowDeletions = False 
+   MsgBox (" " & CustStr & " has been removed! ") End If End Sub 
+
+Private Sub EditBtn_Click()                              'Edit customer button 
+   Dim CustID As Long 
+   CustID = Me!CustID 
+   DoCmd.Close acForm, "Customer List Done" 
+   DoCmd.OpenForm "Customer Done", OpenArgs:=CustID End Sub 
+
+Private Sub Form_Close()                                 'Close form.   
+   On Error Resume Next                                  'prevents nothing to save error when closing form 
+   DoCmd.RunCommand acCmdSave
+End Sub 
+
+Private Sub Form_KeyDown(KeyCode As Integer, Shift As Integer)   'controls navigation arrows in record set table
+   Dim ctl As Control 
+   Dim fldName As String 
+   Dim rst As Recordset
+   
+   On Error GoTo ErrHandler
+   'MsgBox ("the keycode is " & KeyCode) Select Case KeyCode 
+   
+   Case 122 
+      If Shift <> 4 Then 
+         KeyCode = 0 
+      End If 
+   Case vbKeyEnd 
+      KeyCode = 0 
+      DoCmd.RunCommand acCmdRecordsGoToLast 
+   Case vbKeyHome 
+      KeyCode = 0 
+       DoCmd.RunCommand acCmdRecordsGoToFirst 
+   Case vbKeyUp 
+      KeyCode = 0 
+      DoCmd.RunCommand acCmdRecordsGoToPrevious 
+   Case vbKeyDown 
+      KeyCode = 0 
+      DoCmd.RunCommand acCmdRecordsGoToNext 
+   Case vbKeyRight, vbKeyLeft 
+   Case 48 To 57, 65 To 90 
+      Set ctl = Screen.ActiveControl 
+       fldName = ctl.Name 
+      If fldName <> LastFld Then 
+         SrchVal = "" 
+      End If 
+      LastFld = fldName 
+      SrchVal = SrchVal & Chr(KeyCode) 
+      KeyCode = 0 
+      If fldName = "Address" Then 
+         SrchCrit = "[" & fldName & "] Like '*" & SrchVal & "*'" 
+      Else 
+          SrchCrit = "[" & fldName & "] Like '" & SrchVal & "*'" 
+      End If 
+      Set rst = Me.RecordsetClone 
+      rst.FindFirst SrchCrit 
+      If rst.NoMatch Then 
+         MsgBox (" Record not found! ") 
+      Else 
+         Me.Bookmark = rst.Bookmark 
+      End If 
+      rst.Close 
+    Case 107, 187 
+      If SrchVal = "" Then 
+         KeyCode = 0 
+         Exit Sub 
+      End If 
+      Set ctl = Screen.ActiveControl 
+      fldName = ctl.Name 
+      KeyCode = 0 
+      Set rst = Me.RecordsetClone 
+      rst.Bookmark = Me.Bookmark 
+       rst.FindNext SrchCrit 
+      If rst.NoMatch Then 
+         MsgBox (" Record not found! ") 
+      Else 
+         Me.Bookmark = rst.Bookmark 
+      End If 
+      rst.Close 
+   Case 109, 189 
+      If SrchVal = "" Then 
+         KeyCode = 0 
+         Exit Sub 
+      End If 
+      Set ctl = Screen.ActiveControl 
+      fldName = ctl.Name 
+      KeyCode = 0 
+      Set rst = Me.RecordsetClone 
+      rst.Bookmark = Me.Bookmark 
+      rst.FindPrevious SrchCrit 
+      If rst.NoMatch Then 
+         MsgBox (" Record not found! ") 
+      Else 
+         Me.Bookmark = rst.Bookmark 
+      End If 
+      rst.Close 
+    Case 27 
+      KeyCode = 0 
+      SrchVal = "" 
+   Case Else 
+      KeyCode = 0
+End Select
+Exit Sub
+
+ErrHandler: 
+Select Case Err.Number 
+   Case 2046 
+   Case Else 
+      MsgBox Err.Number & " " & Err.Description End Select Resume Next End Sub 
+
+
+Private Sub Form_Open(Cancel As Integer) 
+   Me.AllowAdditions = False 
+   Me.AllowEdits = False 
+   Me.AllowDeletions = False 
+   If Nz(Me.OpenArgs) <> 0 Then 
+   Me!CustID.SetFocus 
+   DoCmd.FindRecord Me.OpenArgs
+Else 
+   Me.OrderBy = "CustID" 
+   Me.OrderByOn = True
+End If
+End Sub 
+
+Private Sub LastName_Label_Click()
+If OrderBy = "lastname" Then 
+   OrderBy = "lastname desc" 
+Else 
+   OrderBy = "lastname" 
+End If
+End Sub 
+
+Private Sub ST_Label_Click()
+If OrderBy = "ST" Then 
+   OrderBy = "ST desc" 
+Else 
+   OrderBy = "ST" 
+End If
+End Sub 
+
+Private Sub Zip_Label_Click()
+If OrderBy = "zip" Then 
+   OrderBy = "zip desc" 
+Else 
+   OrderBy = "zip" 
+End If
+End Sub 
+
+--------------------
+customer example
+Option Compare Database
+Option Explicit 
+
+Private Sub CustListBtn_Click() 
+   Dim CustID As Long 
+   CustID = Me!CustID                                 'set the custID with the customerID record that you're on. 
+   If Me.Dirty = True Then 
+      If MsgBox(" Save Changes? ", vbYesNo) = vbYes Then 
+         Me.Dirty = False 
+      Else 
+         Me.Undo 
+      End If 
+   End If 
+   
+   DoCmd.Close acForm, "Customer"                'when editing a record, close main form we're on first. 
+   DoCmd.OpenForm "Customer List", OpenArgs:=CustID        'open the customer popup with the custID. 
+                                                                                                     'Send to other form.  Every form has Openargs. 
+End Sub 
+
+Private Sub Form_Open(Cancel As Integer) 
+   If Nz(Me.OpenArgs) = 0 Then 
+      Me.RecordSource = "Customer"     'set to entire customer table. 
+   Else 
+      MsgBox (Nz(Me.OpenArgs))         'nz - null zero.  prevents null error. 
+      Me.RecordSource = "SELECT customer.* from customer where Customer.CustID = " & Me.OpenArgs & ";" 
+
+   End If
+End Sub 
+
